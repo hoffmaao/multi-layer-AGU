@@ -33,8 +33,10 @@ the whole jump (multilayer's default); that is kept as `interface="below"`.
 
 ## Experiments
 
-`experiments.py` runs five sets; layers are numbered from the surface down
-in the figures, as on the poster (L = 1 is the surface layer).
+`experiments.py` runs five sets by default, plus the opt-in `refine` set
+(see [Vertical resolution](#vertical-resolution)); layers are numbered
+from the surface down in the figures, as on the poster (L = 1 is the
+surface layer).
 
 | set | column | rheology | interface closure |
 |---|---|---|---|
@@ -86,8 +88,7 @@ Two-layer runs, for comparison: `figures/two_layer_series.png`,
 
 Five layers are not converged: the top layer is two thirds of the column,
 and the one-layer model (plug flow, 463 m/yr) shows how much vertical shear
-a coarse column misses. Subdividing every seeded layer, with stratigraphic
-ice throughout:
+a coarse column misses. Subdividing every seeded layer (the `refine` set):
 
 | layers | no basal ice | basal ice 200 m | ratio |
 |---|---|---|---|
