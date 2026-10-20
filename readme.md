@@ -98,7 +98,9 @@ ice throughout:
 The speeds converge (5 to 10 layers moves them 7-11 %, 10 to 20 only
 2-3 %), and the basal-ice response moves by 4 points over the whole
 refinement, so the comparison between rheology assignments holds at five
-layers; absolute speeds want ten or more.
+layers; absolute speeds want ten or more. The refined rows come from
+`python experiments.py --only refine` (not part of the default run: the
+20-layer runs take 10+ minutes each).
 
 ## Running
 
