@@ -1,0 +1,7 @@
+# Checks for the no-mistakes gate, read from the default branch.
+# Firedrake lives in a local venv. The slab test takes about a minute;
+# without it the test step reruns every experiment and hits its time limit.
+no_ci: true
+commands:
+  test: "OMP_NUM_THREADS=1 $HOME/venv-firedrake-2026/bin/python -m pytest test_slab.py -q -p no:cacheprovider"
+  lint: "$HOME/venv-firedrake-2026/bin/python -m pyflakes ."
