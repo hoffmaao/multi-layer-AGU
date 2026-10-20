@@ -1,0 +1,8 @@
+# Versions used, in a Firedrake 2026.4.1 venv (Python 3.10, PETSc 3.25 with
+# MUMPS), which provides numpy and petsc4py.
+numpy==2.2.6
+matplotlib==3.10.9
+#
+# The ice-flow packages are installed editable from their repositories:
+#   icepack2     https://github.com/hoffmaao/icepack2     fix/firedrake-2026-geometric-dimension
+#   multilayer   https://github.com/hoffmaao/multi-layer  main (series interfaces, PR #2)
