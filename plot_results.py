@@ -109,11 +109,8 @@ def summary(directory, path):
         [mean_surface(load(directory, e, f"h{h:.4f}")) for h in heights]
         for e in ("variable", "poster", "split"))
     uniform5 = mean_surface(load(directory, "fixed", "k0"))
-    uniform1 = mean_surface(load(directory, "uniform", "L1"))
 
     fig, ax = plt.subplots(figsize=(14, 6.5))
-    ax.axhline(uniform1, color=ps.UNIFORM, lw=3, ls=":",
-               label="Uniform, one layer")
     ax.plot(metres, split, "o--", color=ps.UNIFORM, lw=3, ms=9,
             label="Uniform, two layers (interface moves)")
     ax.axhline(uniform5, color=ps.UNIFORM, lw=3,
