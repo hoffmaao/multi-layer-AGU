@@ -7,7 +7,7 @@ resolves vertical shear.  Here the interfaces are seeded once, at every
 basal-layer height the poster used, and only the assignment of rheology to
 layers changes:
 
-``fixed``    the seeded column; the bottom k layers soft, the rest cold,
+``fixed``     the seeded column; the bottom k layers soft, the rest cold,
               k = 0 .. len(INTERFACE_HEIGHTS).
 ``variable``  the poster's two-layer column, interface at each height,
               basal ice below and stratigraphic ice above, interfaces in
