@@ -5,12 +5,9 @@ The poster ran a two-layer column and moved its one interface to make the basal 
 Here we seed the interfaces at every height, giving five layers, and only the number of layers assigned the basal-ice rheology
 changes.
 
-![schematic](figures/schematic.png)
-
 ## Setup
 
-The poster is built from the action terms of [multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in
-icepack2's dual form) in `ismip_hom_d.py`:
+The poster is built from the action terms of [multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in icepack2's dual form) in `ismip_hom_d.py`:
 
 - 6 km periodic slab, 600 m thick, 2.3 degree slope (a uniform body force).
 - Linear sliding on ISMIP-HOM D's drag, beta^2 = 1000 + 1000 sin(2 pi x / L)
@@ -18,59 +15,36 @@ icepack2's dual form) in `ismip_hom_d.py`:
 - Stratigraphic ice n = 1.8, A = 100 MPa^-1.8 yr^-1; basal ice n = 4,
   A = 1000 MPa^-4 yr^-1 (the poster's table).
 
-Each interface is closed **in series**: the half-layer below shears under
-its own law and the half-layer above under its own, at the common interface
-stress. So a column of one law gives the uniform answer wherever its
-interfaces sit, and the rheology change sits exactly on an interface. The
-poster's runs closed every interface with the law of the layer below over
-the whole jump (multilayer's default); that is kept as `interface="below"`.
+Each interface is closed **in series**: the half-layer below shears under its own law and the half-layer above under its own, at the common interface stress. 
+So a column of one law gives the uniform answer wherever its interfaces sit, and the rheology change sits exactly on an interface. 
 
 ## Experiments
 
-`experiments.py` runs four sets by default, plus the opt-in `refine` set
-(see [Vertical resolution](#vertical-resolution)); layers are numbered
-from the surface down in the figures, as on the poster (L = 1 is the
+`experiments.py` runs four sets by default, plus the opt-in `refine` set (see [Vertical resolution](#vertical-resolution)); layers are numbered from the surface down in the figures (L = 1 is the
 surface layer).
 
-| set | column | rheology | interface closure |
+| set | column | rheology |
 |---|---|---|---|
-| `fixed` | five layers, interfaces at 1.5, 3.7, 16.7, 33.3 % | basal ice in the bottom k = 0..4 layers | series |
-| `variable` | two layers, interface at each height | basal below, stratigraphic above | series |
-| `poster` | the same | the same | below (the poster's) |
-| `split` | the same | stratigraphic throughout | (either; one law) |
+| `fixed` | five layers, interfaces at 1.5, 3.7, 16.7, 33.3 % | basal ice in the bottom k = 0..4 layers |
+| `variable` | two layers, interface at each height | basal below, stratigraphic above |
+| `poster` | the same | the same |
+| `split` | the same | stratigraphic throughout |
 
-Mean surface (L = 1) speed, m/yr, along the centreline:
 
-| basal ice | 9 m | 22 m | 100 m | 200 m |
-|---|---|---|---|---|
-| `fixed` (no basal ice: 3801) | 3753 | 3631 | 2977 | 2334 |
-| `variable` | 4686 | 4402 | 3027 | 1785 |
-| `poster` | 2278 | 2088 | 1274 | 724 |
-| `split`, no basal ice at all | 4736 | 4523 | 3491 | 2461 |
-
-![surface speed vs basal ice thickness](figures/surface_vs_thickness.png)
-
-**Moving the interface is most of the poster's trend.** With no rheology
-contrast at all (`split`), moving the two-layer interface from 9 to 200 m
-cuts the surface speed by 48 %. In the two-layer runs the basal ice's own
-effect is the gap between `variable` and `split`, a few percent below
-100 m.
+**Moving the interface without fixing the layers does affect the velocity.** 
+With no rheology contrast at all (`split`), moving the two-layer interface from 9 to 200 m cuts the surface speed by 48 %. In the two-layer runs the basal ice's own effect is the gap between `variable` and `split`, a few percent below 100 m.
 
 **With the layers fixed, basal ice still slows the glacier here**, by 1 %
-at 9 m and 39 % at 200 m (`fixed`). That is the rheology, not an artefact:
-the two laws give the same strain rate at 0.35 MPa
-(1000 tau^4 = 100 tau^1.8), and the stresses in this slab are below that,
-where the n = 4 "soft" ice is the stiffer of the two. Basal ice speeds the
-flow only where its stress exceeds 0.35 MPa, or with a rate factor that
-makes it softer at these stresses.
+at 9 m and 39 % at 200 m (`fixed`).  
+That is the rheology. The two laws give the same strain rate at 0.35 MPa (1000 tau^4 = 100 tau^1.8), and the stresses in this slab are below that, where the n = 4 "soft" ice is the stiffer of the two. 
+Basal ice speeds the flow only where its stress exceeds 0.35 MPa, or with a rate factor that makes it softer at these stresses.
 
-**The closure matters as much as the layout.** The `poster` runs, closed
+**The closure scheme between layers also matters.** The `poster` runs, closed
 with the law below, are 2-2.5 times slower than the same columns in series,
 because the basal law then governs the shear of the whole column, not just
-the basal half-layer. Their profiles reproduce the poster's bottom row in
-shape, ordering and the peak at the slippery spot, about 20 % lower in
-magnitude; the poster's uniform row is not reproduced (the poster's
-notebook is needed to pin that down).
+the basal half-layer. 
+Their profiles reproduce the poster's bottom row in shape, ordering and the peak at the slippery spot, about 20 % lower in
+magnitude.
 
 ![five fixed layers](figures/fixed_layers.png)
 
