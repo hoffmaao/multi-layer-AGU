@@ -1,21 +1,15 @@
 # Soft basal ice in ISMIP-HOM D, with the layers held fixed
 
-A follow-up to Brooklyn Wright's poster *Evaluating the Effect of Soft
-Basal Ice on Glacial Flow* (Wright, Narayanan & Chu; AGU 2026). The poster
-ran a two-layer column and moved its one interface to make the basal ice
-thicker (1.5, 3.7, 16.7 and 33.3 % of the column: 9, 22, 100 and 200 m of
-600 m). Moving the interface changes two things at once: the rheology of
-the ice near the bed, and where the model resolves vertical shear. Here
-the interfaces are seeded once, at every one of those heights, giving five
-layers, and only the number of layers assigned the basal-ice rheology
+This is a follow-up to Brooklyn Wright's poster *Evaluating the Effect of Soft Basal Ice on Glacial Flow* (Wright, Narayanan, Hoffman & Chu; AGU 2026). 
+The poster ran a two-layer column and moved its one interface to make the basal ice thicker (1.5, 3.7, 16.7 and 33.3 % of the column: 9, 22, 100 and 200 m of a 600 m thick column). Moving the interface changes the rheology of the ice near the bed, and where the model resolves vertical shear. 
+Here we seed the interfaces at every height, giving five layers, and only the number of layers assigned the basal-ice rheology
 changes.
 
 ![schematic](figures/schematic.png)
 
 ## Setup
 
-The poster's experiment, built from the action terms of
-[multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in
+The poster is built from the action terms of [multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in
 icepack2's dual form) in `ismip_hom_d.py`:
 
 - 6 km periodic slab, 600 m thick, 2.3 degree slope (a uniform body force).
