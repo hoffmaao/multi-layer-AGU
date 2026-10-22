@@ -7,8 +7,7 @@ resolves vertical shear.  Here the interfaces are seeded once, at every
 basal-layer height the poster used, and only the assignment of rheology to
 layers changes:
 
-``uniform``   one layer of stratigraphic ice: the plug-flow reference.
-``fixed``    the seeded column; the bottom k layers soft, the rest cold,
+``fixed``     the seeded column; the bottom k layers soft, the rest cold,
               k = 0 .. len(INTERFACE_HEIGHTS).
 ``variable``  the poster's two-layer column, interface at each height,
               basal ice below and stratigraphic ice above, interfaces in
@@ -69,7 +68,7 @@ def runs(heights=INTERFACE_HEIGHTS, soft=SOFT, cold=COLD):
     """Every run as (experiment, tag, fractions, laws, basal fraction)."""
     fractions = seeded_fractions(heights)
     tops = np.cumsum(fractions)
-    out = [("uniform", "L1", (1.0,), (cold,), 0.0, "series")]
+    out = []
     for k in range(len(fractions)):
         laws = (soft,) * k + (cold,) * (len(fractions) - k)
         out.append(("fixed", f"k{k}", fractions, laws,
@@ -113,7 +112,7 @@ def main():
     parser.add_argument("--nx", type=int, default=40,
                         help="cells per side (default %(default)d)")
     parser.add_argument("--only", nargs="+",
-                        choices=("uniform", "fixed", "variable", "poster", "split", "refine"),
+                        choices=("fixed", "variable", "poster", "split", "refine"),
                         help="run only these experiments; 'refine' is slow "
                              "(10+ min per 20-layer run) and runs only when named")
     parser.add_argument("--force", action="store_true",
