@@ -1,6 +1,6 @@
 # Checks for the no-mistakes gate, read from the default branch.
 # Firedrake lives in a local venv. The slab and limit tests take about a minute;
-# without it the test step reruns every experiment and hits its time limit.
+# without them the test step reruns every experiment and hits its time limit.
 no_ci: true
 commands:
   test: "OMP_NUM_THREADS=1 $HOME/venv-firedrake-2026/bin/python -m pytest test_slab.py test_limit.py -q -p no:cacheprovider"
