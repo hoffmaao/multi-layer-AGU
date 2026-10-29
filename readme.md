@@ -102,6 +102,12 @@ ice above it and every layer velocity follows by summing half-layer
 shears: n = 4 basal and n = 1.8 stratigraphic ice in every assignment,
 both closures, to a relative error of 1e-7.
 
+`test_limit.py` checks the [limit of no basal ice](#limit-of-no-basal-ice)
+on ISMIP-HOM D itself: with interfaces in series, 0.1 m of basal ice moves
+the surface velocity by under 2e-4 of the stratigraphic-only column, and
+ten times less basal ice gives a ten times smaller difference; with the
+poster's closure the gap stays above 40 %.
+
 `poster_style.py` holds the poster's colours and label boxes, so new
 figures sit beside its panels.
 
