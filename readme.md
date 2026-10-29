@@ -24,11 +24,14 @@ So a column of one law gives the uniform answer wherever its interfaces sit, and
 surface layer).
 
 | set | column | rheology |
-|---|---|---|---|
+|---|---|---|
 | `fixed` | five layers, interfaces at 1.5, 3.7, 16.7, 33.3 % | basal ice in the bottom k = 0..4 layers |
 | `variable` | two layers, interface at each height | basal below, stratigraphic above |
 | `poster` | the same | the same |
 | `split` | the same | stratigraphic throughout |
+
+The three two-layer sets also run with 3, 1, 0.3 and 0.1 m of basal ice, for the
+[limit of no basal ice](#limit-of-no-basal-ice).
 
 
 **Moving the interface without fixing the layers does affect the velocity.** 
@@ -50,6 +53,18 @@ magnitude.
 
 Two-layer runs, for comparison: `figures/two_layer_series.png`,
 `figures/two_layer_poster.png`, `figures/two_layer_uniform.png`.
+
+## Limit of no basal ice
+
+As the basal ice thins to nothing, a two-layer column should recover the
+same column of stratigraphic ice only (n = 1.8 over the full thickness).
+With interfaces in series it does: the surface velocity differs from the
+stratigraphic-only run by 1 % at 9 m, 0.1 % at 1 m and 0.01 % at 0.1 m,
+in proportion to the basal ice thickness. With the poster's closure it
+does not: the difference levels off at 50 %, because that closure shears
+the whole column under the basal law however thin the basal layer is.
+
+![limit of no basal ice](figures/basal_ice_limit.png)
 
 ## Vertical resolution
 

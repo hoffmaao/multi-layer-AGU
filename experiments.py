@@ -18,6 +18,10 @@ layers changes:
 ``split``     the two-layer columns with stratigraphic ice throughout:
               the response to moving the interface alone, with no
               rheology contrast.  ``fixed`` with k = 0 is its reference.
+
+The three two-layer sets also run at LIMIT_THICKNESSES, basal ice thinning
+to 0.1 m: as it vanishes a column should recover the stratigraphic-only
+answer (``split``), and ``variable`` does while ``poster`` does not.
 ``refine``    the seeded column with every layer split into 2 and into 4
               equal parts, with no basal ice and with basal ice in the
               bottom 200 m: the vertical resolution check.  Slow (the
@@ -43,6 +47,8 @@ BASAL_THICKNESSES = (200.0, 100.0, 22.0, 9.0)
 #: Heights of the basal-ice top, as fractions of the ice thickness above the
 #: bed: 33.3, 16.7, 3.7 and 1.5 %.
 INTERFACE_HEIGHTS = tuple(h / THICKNESS for h in BASAL_THICKNESSES)
+#: Thinner basal ice for the two-layer runs [m]: the limit of no basal ice.
+LIMIT_THICKNESSES = (3.0, 1.0, 0.3, 0.1)
 
 #: The poster's rheology table, MPa^-n yr^-1.
 COLD = FlowLaw(n=1.8, A=100.0, name="stratigraphic")
@@ -64,6 +70,11 @@ def seeded_fractions(heights=INTERFACE_HEIGHTS):
     return tuple(top - bottom for bottom, top in zip(edges[:-1], edges[1:]))
 
 
+def two_layer_tag(metres):
+    """Run tag of a two-layer column with ``metres`` of basal ice."""
+    return f"b{metres:g}m"
+
+
 def runs(heights=INTERFACE_HEIGHTS, soft=SOFT, cold=COLD):
     """Every run as (experiment, tag, fractions, laws, basal fraction)."""
     fractions = seeded_fractions(heights)
@@ -73,8 +84,9 @@ def runs(heights=INTERFACE_HEIGHTS, soft=SOFT, cold=COLD):
         laws = (soft,) * k + (cold,) * (len(fractions) - k)
         out.append(("fixed", f"k{k}", fractions, laws,
                     float(tops[k - 1]) if k else 0.0, "series"))
-    for h in sorted(heights):
-        tag = f"h{h:.4f}"
+    for metres in sorted(BASAL_THICKNESSES + LIMIT_THICKNESSES):
+        h = metres / THICKNESS
+        tag = two_layer_tag(metres)
         out.append(("variable", tag, (h, 1 - h), (soft, cold), float(h), "series"))
         out.append(("poster", tag, (h, 1 - h), (soft, cold), float(h), "below"))
         out.append(("split", tag, (h, 1 - h), (cold, cold), float(h), "series"))
