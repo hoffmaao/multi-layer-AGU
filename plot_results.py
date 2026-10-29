@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 import poster_style as ps
-from experiments import RESULTS, BASAL_THICKNESSES, WAVELENGTH
+from experiments import (RESULTS, BASAL_THICKNESSES, LIMIT_THICKNESSES,
+                         WAVELENGTH, two_layer_tag)
 from ismip_hom_d import THICKNESS
 
 FIGURES = Path(__file__).resolve().parent / "figures"
@@ -106,7 +107,7 @@ def summary(directory, path):
     fixed = [mean_surface(load(directory, "fixed", f"k{k + 1}"))
              for k in range(len(heights))]
     variable, poster, split = (
-        [mean_surface(load(directory, e, f"h{h:.4f}")) for h in heights]
+        [mean_surface(load(directory, e, two_layer_tag(m))) for m in metres]
         for e in ("variable", "poster", "split"))
     uniform5 = mean_surface(load(directory, "fixed", "k0"))
 
@@ -136,6 +137,68 @@ def summary(directory, path):
     print(f"wrote {path}")
 
 
+def limit(directory, path):
+    """Two-layer columns as the basal ice thins to nothing, against the same
+    columns of stratigraphic ice only."""
+    metres = sorted(BASAL_THICKNESSES + LIMIT_THICKNESSES)
+    thinnest = metres[0]
+    closures = (("variable", "Composite, series closure", ps.THICKNESS_COLORS[2],
+                 "o", "--"),
+                ("poster", "Composite, poster closure", ps.THICKNESS_COLORS[0],
+                 "s", ":"))
+
+    def surface(experiment, m):
+        return load(directory, experiment, two_layer_tag(m))["surface"][:-1]
+
+    def difference(experiment, m):
+        reference = surface("split", m)
+        return (np.linalg.norm(surface(experiment, m) - reference)
+                / np.linalg.norm(reference))
+
+    fig, axes = plt.subplots(1, 2, figsize=ps.FIGSIZE,
+                             gridspec_kw=dict(wspace=0.28))
+
+    ax = axes[0]
+    run = load(directory, "split", two_layer_tag(thinnest))
+    ax.plot(run["x"], run["surface"], color=ps.UNIFORM, lw=6,
+            label="Stratigraphic only")
+    for experiment, name, color, _, style in closures:
+        run = load(directory, experiment, two_layer_tag(thinnest))
+        ax.plot(run["x"], run["surface"], color=color, lw=3, ls=style,
+                label=name)
+    ax.set_title(f"(a) Horizontal Velocity, {thinnest:g} m basal ice")
+    ax.set_xlabel("Domain (m)")
+    ax.set_ylabel("L=1 velocity (m/yr)")
+    ax.set_xticks(np.arange(0, run["x"].max() + 1, 2000))
+    ax.set_ylim(0, None)
+    ax.legend(loc="lower left", fontsize=14)
+    ps.mark_slippery_spot(ax, x=0.75 * float(run["wavelength"]))
+
+    ax = axes[1]
+    for experiment, name, color, marker, style in closures:
+        ax.plot(metres, [difference(experiment, m) for m in metres],
+                marker=marker, ls=style, color=color, lw=3, ms=9, label=name)
+    # Reference slope: a difference proportional to the basal ice thickness.
+    series = difference("variable", thinnest)
+    guide = np.array([metres[0], metres[-1]])
+    ax.plot(guide, series * guide / thinnest, color="gray", lw=1.5,
+            label="Proportional to thickness")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xticks(metres)
+    ax.set_xticklabels([f"{m:g}" for m in metres])
+    ax.minorticks_off()
+    ax.set_title("(b) Difference from Stratigraphic Only")
+    ax.set_xlabel("Basal ice thickness (m)")
+    ax.set_ylabel("Relative L=1 difference")
+    ax.legend(loc="lower right", fontsize=14)
+
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.13, top=0.92)
+    fig.savefig(path, dpi=ps.DPI)
+    plt.close(fig)
+    print(f"wrote {path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--wavelength", type=float, default=WAVELENGTH)
@@ -157,11 +220,13 @@ def main():
             ("variable", "two_layer_series", colors, None),
             ("poster", "two_layer_poster", colors, None),
             ("split", "two_layer_uniform", list(ps.UNIFORM_COLORS), "Interface")):
-        runs = [load(directory, experiment, f"h{h:.4f}") for h in heights]
+        runs = [load(directory, experiment, two_layer_tag(h * THICKNESS))
+                for h in heights]
         three_panel(runs, palette, thickness_labels, FIGURES / f"{name}.png",
                     key_title=title)
 
     summary(directory, FIGURES / "surface_vs_thickness.png")
+    limit(directory, FIGURES / "basal_ice_limit.png")
 
 
 if __name__ == "__main__":
