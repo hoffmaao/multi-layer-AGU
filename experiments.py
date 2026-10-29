@@ -18,15 +18,15 @@ layers changes:
 ``split``     the two-layer columns with stratigraphic ice throughout:
               the response to moving the interface alone, with no
               rheology contrast.  ``fixed`` with k = 0 is its reference.
-
-The three two-layer sets also run at LIMIT_THICKNESSES, basal ice thinning
-to 0.1 m: as it vanishes a column should recover the stratigraphic-only
-answer (``split``), and ``variable`` does while ``poster`` does not.
 ``refine``    the seeded column with every layer split into 2 and into 4
               equal parts, with no basal ice and with basal ice in the
               bottom 200 m: the vertical resolution check.  Slow (the
               20-layer runs take 10+ minutes each), so it runs only when
               asked for with ``--only refine``.
+
+The three two-layer sets also run at LIMIT_THICKNESSES, basal ice thinning
+to 0.1 m: as it vanishes a column should recover the stratigraphic-only
+answer (``split``), and ``variable`` does while ``poster`` does not.
 
 Each run is saved to ``results/<experiment>_<tag>.npz``; a run already
 on disk is skipped unless ``--force``.
