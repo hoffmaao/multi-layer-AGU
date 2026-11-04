@@ -65,7 +65,7 @@ that makes it softer at these stresses.
 
 **Two layers are not enough, whichever closure.**  One layer cannot carry
 the shear of the ice above the basal layer: the two-layer column with no
-rheology contrast (`split`) is 34 % faster than the first-order solution
+rheology contrast (`split`) is 35 % faster than the first-order solution
 with 9 m in the bottom layer, and moving its interface from 9 to 200 m cuts
 its surface speed by 17 % with nothing else changed.  With the series
 closure (`variable`) the basal ice's own effect, against `split`, is 1.5 %
