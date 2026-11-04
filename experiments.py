@@ -169,8 +169,8 @@ def main():
     parser.add_argument("--only", nargs="+",
                         choices=("fixed", "variable", "poster", "split", "refine",
                                  "reference"),
-                        help="run only these experiments; 'refine' is slow "
-                             "(10+ min per 20-layer run) and runs only when named")
+                        help="run only these experiments; 'refine' (the 5- and "
+                             "10-layer resolution check) runs only when named")
     parser.add_argument("--force", action="store_true",
                         help="re-run results already on disk")
     parser.add_argument("--list", action="store_true",
@@ -184,6 +184,9 @@ def main():
         for experiment, tag, fractions, laws, basal, interface in todo:
             layers = ", ".join(f"{f:.4f} {law.name}" for f, law in zip(fractions, laws))
             print(f"{experiment:9s} {tag:8s} {interface:6s} basal {basal:.4f} | {layers}")
+        if not args.only or "reference" in args.only:
+            for tag, basal in reference_runs():
+                print(f"{'reference':9s} {tag:8s} {'':6s} basal {basal:.4f} | first order")
         return
 
     out_dir.mkdir(parents=True, exist_ok=True)
