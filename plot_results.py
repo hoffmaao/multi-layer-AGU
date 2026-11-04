@@ -104,24 +104,35 @@ def summary(directory, path):
     def mean_surface(run):
         return run["surface"][:-1].mean()   # the last sample repeats x = 0
 
+    def reference_surface(tag):
+        with np.load(directory / f"reference_{tag}.npz") as data:
+            return data["velocity"][-1][:-1].mean()
+
     fixed = [mean_surface(load(directory, "fixed", f"k{k + 1}"))
              for k in range(len(heights))]
     variable, poster, split = (
         [mean_surface(load(directory, e, two_layer_tag(m))) for m in metres]
         for e in ("variable", "poster", "split"))
-    uniform5 = mean_surface(load(directory, "fixed", "k0"))
+    uniform_fixed_run = load(directory, "fixed", "k0")
+    uniform_fixed = mean_surface(uniform_fixed_run)
+    reference = [reference_surface(two_layer_tag(m)) for m in metres]
+    reference_none = reference_surface("none")
 
     fig, ax = plt.subplots(figsize=(14, 6.5))
     ax.plot(metres, split, "o--", color=ps.UNIFORM, lw=3, ms=9,
             label="Uniform, two layers (interface moves)")
-    ax.axhline(uniform5, color=ps.UNIFORM, lw=3,
-               label="Uniform, five fixed layers")
+    ax.axhline(uniform_fixed, color=ps.UNIFORM, lw=3,
+               label=f"Uniform, {uniform_fixed_run['layers']} fixed layers")
     ax.plot(metres, poster, "s:", color=ps.THICKNESS_COLORS[0], lw=3, ms=9,
             label="Composite, two layers (poster closure)")
     ax.plot(metres, variable, "o--", color=ps.THICKNESS_COLORS[2], lw=3, ms=9,
             label="Composite, two layers (series closure)")
     ax.plot(metres, fixed, "o-", color=ps.THICKNESS_COLORS[3], lw=3, ms=9,
-            label="Composite, five fixed layers")
+            label=f"Composite, {uniform_fixed_run['layers']} fixed layers")
+    ax.axhline(reference_none, color="black", lw=1.5, ls=":",
+               label="First order, no basal ice")
+    ax.plot(metres, reference, "*", color="black", ms=16,
+            label="First order (Blatter-Pattyn)")
     ax.set_xscale("log")
     ax.set_xticks(metres)
     ax.set_xticklabels([f"{m:g}" for m in metres])
@@ -178,6 +189,15 @@ def limit(directory, path):
     for experiment, name, color, marker, style in closures:
         ax.plot(metres, [difference(experiment, m) for m in metres],
                 marker=marker, ls=style, color=color, lw=3, ms=9, label=name)
+    # The first-order effect of the same basal ice on the surface velocity.
+    def reference_surface(tag):
+        with np.load(directory / f"reference_{tag}.npz") as data:
+            return data["velocity"][-1][:-1]
+
+    none = reference_surface("none")
+    ax.plot(metres, [np.linalg.norm(reference_surface(two_layer_tag(m)) - none)
+                     / np.linalg.norm(none) for m in metres],
+            "*", color="black", ms=16, label="First order")
     # Reference slope: a difference proportional to the basal ice thickness.
     series = difference("variable", thinnest)
     guide = np.array([metres[0], metres[-1]])

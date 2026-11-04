@@ -2,10 +2,11 @@ r"""Schematic of the two experimental designs, in the poster's style.
 
 Top row: the poster's runs, a two-layer column whose one interface moves
 to make the basal ice thicker.  Bottom row: the interfaces seeded once at
-every one of those heights, five layers, with only the assignment of
-basal-ice rheology changing.  The arrows in each layer of the bottom row
-trace each layer's mean along-flow speed from ``experiments.py``: every
-layer moves as a block.
+every one of those heights, with only the assignment of basal-ice rheology
+changing.  The arrows in each seeded layer of the bottom row trace its
+mean along-flow speed in the ``fixed`` runs of ``experiments.py``, which
+split every seeded layer into ``FIXED_SUBDIVISIONS``: the thickness-weighted
+mean over its sub-layers.
 
     python plot_schematic.py [--wavelength 6000] [--nx 40]
 """
@@ -52,6 +53,18 @@ def spread(z, gap):
     return out
 
 
+def seeded_speeds(result, seeded):
+    """Thickness-weighted mean speed of each seeded layer (``seeded`` edges)
+    over the layers of ``result`` that subdivide it."""
+    fractions = result["fractions"]
+    middles = np.cumsum(fractions) - 0.5 * fractions
+    layer = np.searchsorted(seeded, middles) - 1
+    speeds = result["velocity"][:, :-1].mean(axis=1)
+    count = len(seeded) - 1
+    return (np.bincount(layer, fractions * speeds, count)
+            / np.bincount(layer, fractions, count))
+
+
 def bed(ax, x0, x1, depth=0.035):
     ax.add_patch(Rectangle((x0, -depth), x1 - x0, depth, facecolor=ps.BED,
                            edgecolor="black", lw=1.5))
@@ -88,15 +101,15 @@ def main():
     title_box(ax, 0.5 * count * width, 1.0,
               "Poster: varying basal ice thickness")
 
-    # Five fixed layers: only the rheology moves.
+    # Fixed seeded layers: only the rheology moves.
     ax = axes[1]
-    speeds = [load(directory, "fixed", f"k{k}")["velocity"][:, :-1].mean(axis=1)
+    speeds = [seeded_speeds(load(directory, "fixed", f"k{k}"), seeded)
               for k in range(1, count + 1)]
     vmax = max(s.max() for s in speeds)
     for i, k in enumerate(range(1, count + 1)):
         x0 = i * width
         column(ax, x0, width, seeded, basal_layers=k)
-        # Each layer moves as a block: a stepped profile of the layer speeds.
+        # A stepped profile of the seeded-layer mean speeds.
         u = x0 + 0.08 * width + 0.6 * width * speeds[i] / vmax
         ax.stairs(u, seeded, baseline=None, orientation="horizontal",
                   color=ps.LABEL_EDGE, lw=2.5)
@@ -118,7 +131,7 @@ def main():
                     xytext=(-0.2, z), fontsize=15, ha="center", va="center",
                     arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
     ax.text(count * width + 0.12, 0.5,
-            "Five layers seeded\nat every basal ice\nheight; only the\n"
+            "Layers seeded\nat every basal ice\nheight; only the\n"
             "rheology of each\nlayer changes.\nProfile: mean\nlayer speed.",
             fontsize=17, va="center", ha="left")
     title_box(ax, 0.5 * count * width, 1.0,

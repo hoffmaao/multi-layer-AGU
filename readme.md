@@ -2,12 +2,15 @@
 
 This is a follow-up to Brooklyn Wright's poster *Evaluating the Effect of Soft Basal Ice on Glacial Flow* (Wright, Narayanan, Hoffman & Chu; AGU 2026). 
 The poster ran a two-layer column and moved its one interface to make the basal ice thicker (1.5, 3.7, 16.7 and 33.3 % of the column: 9, 22, 100 and 200 m of a 600 m thick column). Moving the interface changes the rheology of the ice near the bed, and where the model resolves vertical shear. 
-Here we seed the interfaces at every height, giving five layers, and only the number of layers assigned the basal-ice rheology
-changes.
+Here we seed the interfaces at every height and split each seeded layer
+into four, giving twenty layers, and only the number of seeded layers
+assigned the basal-ice rheology changes.  Every column is checked against
+the first-order (Blatter-Pattyn) solution, computed independently of the
+layered model.
 
 ## Setup
 
-The poster is built from the action terms of [multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in icepack2's dual form) in `ismip_hom_d.py`:
+The model is built from the action terms of [multilayer](https://github.com/hoffmaao/multi-layer) (Jouvet 2015 in icepack2's dual form) in `ismip_hom_d.py`:
 
 - 6 km periodic slab, 600 m thick, 2.3 degree slope (a uniform body force).
 - Linear sliding on ISMIP-HOM D's drag, beta^2 = 1000 + 1000 sin(2 pi x / L)
@@ -15,41 +18,72 @@ The poster is built from the action terms of [multilayer](https://github.com/hof
 - Stratigraphic ice n = 1.8, A = 100 MPa^-1.8 yr^-1; basal ice n = 4,
   A = 1000 MPa^-4 yr^-1 (the poster's table).
 
-Each interface is closed **in series**: the half-layer below shears under its own law and the half-layer above under its own, at the common interface stress. 
-So a column of one law gives the uniform answer wherever its interfaces sit, and the rheology change sits exactly on an interface. 
+Each layer is two half-layers under its own flow law
+(`multilayer.model.minimization.layer_power`), each with one effective
+stress from the membrane stress and the shear on its face.  So every
+interface is in series (the half-layer below shears under its own law and
+the half-layer above under its own, at the common interface stress), a
+column of one law gives the uniform answer wherever its interfaces sit,
+the rheology change sits exactly on an interface, and the bottom
+half-layer shears above the sliding bed.  This is the model that converges
+to the first-order solution as layers are added (multilayer's
+`test/first_order_test.py`).
+
+The poster's runs used multilayer's earlier terms, kept here as the
+`poster` closure: a membrane law and a shear law of their own per layer,
+each interface closed with the law of the layer below over the whole
+velocity jump, and the bottom layer's velocity taken as the sliding
+velocity.
 
 ## Experiments
 
-`experiments.py` runs four sets by default, plus the opt-in `refine` set (see [Vertical resolution](#vertical-resolution)); layers are numbered from the surface down in the figures (L = 1 is the
-surface layer).
+`experiments.py` runs five sets by default, plus the opt-in `refine` set
+(see [Vertical resolution](#vertical-resolution)); layers are numbered from
+the surface down in the figures (L = 1 is the surface layer).
 
 | set | column | rheology |
 |---|---|---|
-| `fixed` | five layers, interfaces at 1.5, 3.7, 16.7, 33.3 % | basal ice in the bottom k = 0..4 layers |
+| `fixed` | interfaces at 1.5, 3.7, 16.7, 33.3 %, each seeded layer split in four (20 layers) | basal ice in the bottom k = 0..4 seeded layers |
 | `variable` | two layers, interface at each height | basal below, stratigraphic above |
-| `poster` | the same | the same |
+| `poster` | the same, poster closure | the same |
 | `split` | the same | stratigraphic throughout |
+| `reference` | first-order solution, no layers | basal ice below each height, and none |
 
-The three two-layer sets also run with 3, 1, 0.3 and 0.1 m of basal ice, for the
-[limit of no basal ice](#limit-of-no-basal-ice).
+The three two-layer sets and the reference also run with 3, 1, 0.3 and
+0.1 m of basal ice, for the [limit of no basal ice](#limit-of-no-basal-ice).
 
+**With the layers fixed, basal ice slows the glacier here**, by 2.1 % at
+9 m, 5.2 % at 22 m, 22 % at 100 m and 40 % at 200 m of basal ice (mean
+surface speed, `fixed`).  The first-order solution gives 2.1, 5.2, 22 and
+40 %, and the twenty-layer speeds are within 1 % of it (3627 m/yr with no
+basal ice against 3609, 2185 with 200 m against 2163).  That is the
+rheology.  The two laws give the same strain rate at 0.35 MPa
+(1000 tau^4 = 100 tau^1.8), and the stresses in this slab are below that,
+where the n = 4 "soft" ice is the stiffer of the two.  Basal ice speeds
+the flow only where its stress exceeds 0.35 MPa, or with a rate factor
+that makes it softer at these stresses.
 
-**Moving the interface without fixing the layers does affect the velocity.** 
-With no rheology contrast at all (`split`), moving the two-layer interface from 9 to 200 m cuts the surface speed by 48 %. In the two-layer runs the basal ice's own effect is the gap between `variable` and `split`, a few percent below 100 m.
+**Two layers are not enough, whichever closure.**  One layer cannot carry
+the shear of the ice above the basal layer: the two-layer column with no
+rheology contrast (`split`) is 35 % faster than the first-order solution
+with 9 m in the bottom layer, and moving its interface from 9 to 200 m cuts
+its surface speed by 17 % with nothing else changed.  With the series
+closure (`variable`) the basal ice's own effect, against `split`, is 1.5 %
+at 9 m and 34 % at 200 m, against 2.1 and 40 % in the first-order
+solution, and on the wrong absolute speeds.
 
-**With the layers fixed, basal ice still slows the glacier here**, by 1 %
-at 9 m and 39 % at 200 m (`fixed`).  
-That is the rheology. The two laws give the same strain rate at 0.35 MPa (1000 tau^4 = 100 tau^1.8), and the stresses in this slab are below that, where the n = 4 "soft" ice is the stiffer of the two. 
-Basal ice speeds the flow only where its stress exceeds 0.35 MPa, or with a rate factor that makes it softer at these stresses.
-
-**The closure scheme between layers also matters.** The `poster` runs, closed
-with the law below, are 2-2.5 times slower than the same columns in series,
-because the basal law then governs the shear of the whole column, not just
-the basal half-layer. 
-Their profiles reproduce the poster's bottom row in shape, ordering and the peak at the slippery spot, about 20 % lower in
+**The poster's closure exaggerates the basal ice.**  The `poster` runs are
+2.1 times slower than the same columns in series at 9 m and 3.7 times at
+200 m, because the basal law governs the shear of the whole interface
+jump, not just the basal half-layer: with 9 m of basal ice the surface is
+53 % slower than the stratigraphic-only column, where the first-order
+solution is 2 % slower.  Their profiles reproduce the poster's bottom row
+in shape, ordering and the peak at the slippery spot, about 20 % lower in
 magnitude.
 
-![five fixed layers](figures/fixed_layers.png)
+![twenty fixed layers](figures/fixed_layers.png)
+
+![surface speed against basal ice thickness](figures/surface_vs_thickness.png)
 
 Two-layer runs, for comparison: `figures/two_layer_series.png`,
 `figures/two_layer_poster.png`, `figures/two_layer_uniform.png`.
@@ -59,39 +93,42 @@ Two-layer runs, for comparison: `figures/two_layer_series.png`,
 As the basal ice thins to nothing, a two-layer column should recover the
 same column of stratigraphic ice only (n = 1.8 over the full thickness).
 With interfaces in series it does: the surface velocity differs from the
-stratigraphic-only run by 1 % at 9 m, 0.1 % at 1 m and 0.01 % at 0.1 m,
-in proportion to the basal ice thickness. With the poster's closure it
-does not: the difference levels off at 50 %, because that closure shears
-the whole column under the basal law however thin the basal layer is.
+stratigraphic-only run by 1.5 % at 9 m, 0.17 % at 1 m and 0.017 % at
+0.1 m, in proportion to the basal ice thickness, as the first-order
+solution does (2.1 %, 0.24 % and 0.024 %; the two-layer column, too
+coarse for absolute speeds, gets the factor in front a little low).  With
+the poster's closure it does not: the difference levels off at 51 %,
+because that closure shears the whole column under the basal law however
+thin the basal layer is.
 
 ![limit of no basal ice](figures/basal_ice_limit.png)
 
 ## Vertical resolution
 
-Five layers are not converged: the top layer is two thirds of the column.
-Subdividing every seeded layer (the `refine` set):
+The seeded layers alone are not converged: the top one is two thirds of
+the column.  Splitting every seeded layer (mean surface speed, m/yr):
 
 | layers | no basal ice | basal ice 200 m | ratio |
 |---|---|---|---|
-| 5 (seeded) | 3801 | 2334 | 0.61 |
-| 10 (each seeded layer halved) | 3553 | 2067 | 0.58 |
-| 20 (each seeded layer quartered) | 3496 | 2003 | 0.57 |
+| 5 (seeded) | 3971 | 2538 | 0.639 |
+| 10 (each seeded layer halved) | 3696 | 2255 | 0.610 |
+| 20 (each seeded layer quartered, `fixed`) | 3627 | 2185 | 0.602 |
+| first order | 3609 | 2163 | 0.600 |
 
-The speeds converge (5 to 10 layers moves them 7-11 %, 10 to 20 only
-2-3 %), and the basal-ice response moves by 4 points over the whole
-refinement, so the comparison between rheology assignments holds at five
-layers; absolute speeds want ten or more. The refined rows come from
-`python experiments.py --only refine` (not part of the default run: the
-20-layer runs take 10+ minutes each).
+The error falls about fourfold with each halving (10 % at 5 layers, 2.4 %
+at 10, 0.5 % at 20 with no basal ice), as it should at second order, so
+`fixed` uses twenty layers.  The 5- and 10-layer rows come from
+`python experiments.py --only refine`.
 
 ## Running
 
 Firedrake 2026.4.1 (`~/venv-firedrake-2026`), `requirements.txt`, and
-icepack2 and multilayer installed editable. Run with `OMP_NUM_THREADS=1`.
+icepack2, icepack_tools and multilayer installed editable. Run with
+`OMP_NUM_THREADS=1`.
 
 ```bash
 python experiments.py --list     # the runs
-python experiments.py            # ~10 min; results/L6000m_nx40/*.npz, skips runs on disk
+python experiments.py            # ~1 h; results/L6000m_nx40/*.npz, skips runs on disk
 python plot_results.py           # figures/*.png
 python plot_schematic.py         # figures/schematic.png
 ```
