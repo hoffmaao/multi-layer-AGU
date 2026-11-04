@@ -5,19 +5,23 @@ vanish, and each interface carries the weight of the ice above it:
 
     S(z) = rho g tan(alpha) (H - z).
 
-The bottom layer slides at u_1 = S(0) / beta^2, and each interface adds the
-shear of the two half-layers that meet there.  Glen's law in the poster's
-convention, strain rate A tau^n with du/dz = 2 A tau^n, sheared over a
-half-layer h/2, gives h A S^n per half-layer, so across the interface at
-z_l between layers l and l+1
+Glen's law in the poster's convention, strain rate A tau^n with
+du/dz = 2 A tau^n, sheared over a half-layer h/2, gives h A S^n per
+half-layer.  The bed slides at S(0) / beta^2, and the series model shears
+the bottom half-layer above it; each interface adds the shear of the two
+half-layers that meet there.  So, with z_l the interface between layers l
+and l+1,
 
-    series:  u_{l+1} - u_l = h_l A_l S^n_l + h_{l+1} A_{l+1} S^n_{l+1}
-    below:   u_{l+1} - u_l = (h_l + h_{l+1}) A_l S^n_l
+    series:  u_1 = S(0) / beta^2 + h_1 A_1 S(0)^n
+             u_{l+1} - u_l = h_l A_l S^n_l + h_{l+1} A_{l+1} S^n_{l+1}
+    below:   u_1 = S(0) / beta^2
+             u_{l+1} - u_l = (h_l + h_{l+1}) A_l S^n_l
 
 The solver has to reproduce these to solver tolerance, layer by layer.
-The membrane stress is zero here, so the membrane closure is taken linear
-(``membrane_exponent=1``): at M = 0 an n > 1 membrane block vanishes and
-the Jacobian is singular.  The shear closures under test keep their laws.
+The membrane stress is zero here.  The poster's model ("below") has a
+membrane law of its own, whose n > 1 block vanishes at M = 0 and leaves
+the Jacobian singular, so it is taken linear there
+(``membrane_exponent=1``); the series model needs no such device.
 
     python test_slab.py      (or pytest test_slab.py)
 """
@@ -37,7 +41,10 @@ def layered(fractions, laws, interface):
     """Closed-form layer velocities, bottom to top."""
     tau = rho_I * g * math.tan(math.radians(SLOPE_DEG))       # MPa per m
     h = [f * THICKNESS for f in fractions]
-    u = [tau * THICKNESS / (BETA2_MEAN * PA_TO_MPA)]
+    tau_b = tau * THICKNESS
+    u = [tau_b / (BETA2_MEAN * PA_TO_MPA)]
+    if interface == "series":
+        u[0] += h[0] * laws[0].A * tau_b ** laws[0].n
     z = 0.0
     for l in range(len(h) - 1):
         z += h[l]
@@ -52,10 +59,11 @@ def layered(fractions, laws, interface):
 
 
 def check(fractions, laws, interface, rtol=1e-6):
-    # The slab has no membrane stress, so its membrane law is immaterial;
-    # a linear one keeps the Jacobian non-singular at M = 0.
+    # The slab has no membrane stress, so the poster model's own membrane
+    # law is immaterial; a linear one keeps its Jacobian non-singular at M = 0.
     solution = solve(fractions, laws, interface=interface, beta2_amplitude=0.0,
-                     membrane_exponent=1.0, wavelength=6000.0, nx=6)
+                     membrane_exponent=1.0 if interface == "below" else None,
+                     wavelength=6000.0, nx=6)
     computed = solution.velocity.mean(axis=1)
     spread = np.ptp(solution.velocity, axis=1).max()
     exact = layered(fractions, laws, interface)

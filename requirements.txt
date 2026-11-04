@@ -5,4 +5,5 @@ matplotlib==3.10.9
 #
 # The ice-flow packages are installed editable from their repositories:
 #   icepack2     https://github.com/hoffmaao/icepack2     fix/firedrake-2026-geometric-dimension
-#   multilayer   https://github.com/hoffmaao/multi-layer  main (series interfaces, PR #2)
+#   multilayer   https://github.com/hoffmaao/multi-layer  main (layer_power and
+#                slope_coupling: the model that converges to first order)

@@ -12,15 +12,22 @@ degree slope.
 
 The momentum balance is the multilayer dual form of
 `multilayer <https://github.com/hoffmaao/multi-layer>`_, assembled here from
-its action terms.  Each layer has its own flow law (n, A), and every
-interface is closed in series: the half-layer below shears under its law,
-the half-layer above under its own, at the common interface stress
-(``multilayer.model.minimization.interlayer_power`` with the ``_above``
-arguments).  So a column whose layers all carry one law is exactly the
-uniform model, wherever its interfaces sit, and a rheology change sits
-exactly on an interface.  ``interface="below"`` instead closes each
-interface with the law of the layer below over the whole velocity jump,
-the multilayer default the poster's runs used.
+its action terms.  Each layer has its own flow law (n, A), and is taken as
+two half-layers under that law (``multilayer.model.minimization.layer_power``):
+each half-layer has one effective stress from the membrane stress and the
+shear on its face, every interface is in series (the half-layer below
+shears under its law, the one above under its own, at the common
+interface stress), and the bottom half-layer shears above the sliding
+bed.  So a column whose layers all carry one law is exactly the uniform
+model, wherever its interfaces sit, a rheology change sits exactly on an
+interface, and the column converges to the first-order (Blatter-Pattyn)
+solution at second order in the layer thickness.  The layers are flat
+here, so multilayer's ``slope_coupling`` vanishes.
+
+``interface="below"`` is the model the poster's runs used: a membrane law
+and a shear law of their own per layer, each interface closed with the
+law of the layer below over the whole velocity jump, and the bottom
+layer's velocity taken as the sliding velocity.
 
 Units are icepack2's: MPa, m, yr.
 """
@@ -125,12 +132,14 @@ def solve(fractions, laws, wavelength=WAVELENGTH, thickness=THICKNESS,
         friction uniform, a laterally uniform slab with a closed-form
         layered solution.
     membrane_exponent : float, optional
-        Close the membrane stress with this exponent (at each layer's
-        stress-matched rate factor) instead of the layer's own; the shear
-        closures keep the layer laws.  For the uniform slab only: there
-        the membrane stress is zero, so it does not change the solution,
-        but the n > 1 membrane block vanishes with it and the Jacobian is
-        singular.
+        ``interface="below"`` only: close the membrane stress with this
+        exponent (at each layer's stress-matched rate factor) instead of
+        the layer's own; the shear closures keep the layer laws.  For the
+        uniform slab only: there the membrane stress is zero, so it does
+        not change the solution, but the n > 1 membrane block vanishes with
+        it and the Jacobian is singular.  The series model needs no such
+        device: the shear in each half-layer's effective stress keeps the
+        membrane block invertible.
     nx : int
         Cells per side of the periodic L x L mesh.
     steps : int
@@ -147,6 +156,8 @@ def solve(fractions, laws, wavelength=WAVELENGTH, thickness=THICKNESS,
         raise ValueError(f"interface must be one of {INTERFACES}, got {interface!r}")
     if min(fractions) <= 0:
         raise ValueError("every layer needs a positive thickness")
+    if membrane_exponent is not None and interface != "below":
+        raise ValueError("membrane_exponent applies to interface='below' only")
 
     mesh = firedrake.PeriodicRectangleMesh(nx, nx, wavelength, wavelength,
                                            direction="x")
@@ -183,16 +194,23 @@ def solve(fractions, laws, wavelength=WAVELENGTH, thickness=THICKNESS,
 
     action = Constant(0.0) * dx(mesh)
     for l, layer in enumerate(fields):
-        action += minimization.viscous_power(
-            membrane_stress=layer["membrane_stress"], thickness=h_layers[l],
-            flow_law_coefficient=A_membrane[l],
-            flow_law_exponent=n_membrane[l])
+        S_above = fields[l + 1]["interlayer_stress"] if l < num_layers - 1 else None
+        if interface == "series":
+            action += minimization.layer_power(
+                membrane_stress=layer["membrane_stress"],
+                stress_below=layer["interlayer_stress"], stress_above=S_above,
+                thickness=h_layers[l],
+                flow_law_coefficient=A[l], flow_law_exponent=n[l])
+        else:
+            action += minimization.viscous_power(
+                membrane_stress=layer["membrane_stress"], thickness=h_layers[l],
+                flow_law_coefficient=A_membrane[l],
+                flow_law_exponent=n_membrane[l])
         action += minimization.momentum_balance(
             velocity=layer["velocity"], membrane_stress=layer["membrane_stress"],
             thickness=h_layers[l], surface=surface,
             basal_stress=layer["interlayer_stress"] if l == 0 else None,
-            stress_above=(fields[l + 1]["interlayer_stress"]
-                          if l < num_layers - 1 else None),
+            stress_above=S_above,
             stress_below=layer["interlayer_stress"] if l > 0 else None)
         action += rho_I * g * h_layers[l] * tan_alpha * layer["velocity"][0] * dx
 
@@ -200,15 +218,12 @@ def solve(fractions, laws, wavelength=WAVELENGTH, thickness=THICKNESS,
         basal_stress=fields[0]["interlayer_stress"],
         sliding_coefficient=K, sliding_exponent=m)
 
-    for l in range(1, num_layers):
-        above = ({"flow_law_coefficient_above": A[l],
-                  "flow_law_exponent_above": n[l]}
-                 if interface == "series" else {})
-        action += minimization.interlayer_power(
-            interlayer_stress=fields[l]["interlayer_stress"],
-            thickness_below=h_layers[l - 1], thickness_above=h_layers[l],
-            flow_law_coefficient=A[l - 1], flow_law_exponent=n[l - 1],
-            **above)
+    if interface == "below":
+        for l in range(1, num_layers):
+            action += minimization.interlayer_power(
+                interlayer_stress=fields[l]["interlayer_stress"],
+                thickness_below=h_layers[l - 1], thickness_above=h_layers[l],
+                flow_law_coefficient=A[l - 1], flow_law_exponent=n[l - 1])
 
     F = derivative(action, z)
     bcs = [firedrake.DirichletBC(Z.sub(3 * l).sub(1), 0, (1, 2))
